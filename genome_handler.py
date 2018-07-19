@@ -112,7 +112,7 @@ class GenomeHandler:
                 convolution = None
                 if input_layer:
                     convolution = Convolution2D(
-                                        genome[offset + 1], (3, 3),
+                                        genome[offset + 1], (3, 3),     # fixed convolution window 3x3
                                         padding='same',
                                         input_shape=self.input_shape)
                     input_layer = False

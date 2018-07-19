@@ -138,10 +138,16 @@ class DEvol:
         met = loss if self.metric == 'loss' else accuracy
         if self.bssf is -1 or self.metric_op(met, self.bssf) and accuracy is not 0:
             try:
+                os.remove('best-model.json')
+                os.remove('best-model_optimizer.txt')
                 os.remove('best-model.h5')
             except OSError:
                 pass
             self.bssf = met
+            with open('best-model.json', 'w') as json_file:
+                json_file.write(model.to_json())
+            with open('best-model_optimizer.txt', 'w') as f:
+                f.write(model.optimizer.__class__.__name__)
             model.save('best-model.h5')
 
         return model, loss, accuracy
