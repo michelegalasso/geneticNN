@@ -29,7 +29,7 @@ max_dense_layers = 2 # including final softmax layer
 max_conv_kernals = 256
 max_dense_nodes = 1024
 input_shape = x_train.shape[1:]
-num_classes = 10
+num_classes = 10    # one target class for each digit we want to recognize
 
 genome_handler = GenomeHandler(max_conv_layers, max_dense_layers, max_conv_kernals, \
                     max_dense_nodes, input_shape, num_classes)
