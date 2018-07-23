@@ -2,3 +2,4 @@
 __pycache__
 *.pyc
 devol.egg-info
+.idea

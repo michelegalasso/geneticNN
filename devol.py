@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from genome_handler import GenomeHandler
 import numpy as np
 from keras.models import Sequential
@@ -51,7 +49,8 @@ class DEvol:
         self.metric_objective = METRIC_OBJECTIVES[self.objective is 'max']
 
 
-    def run(self, dataset, num_generations, pop_size, epochs, fitness=None, metric='accuracy'):
+    def run(self, dataset, num_generations, pop_size, epochs, scoring_function=None, metric='accuracy',
+            frac_crossover=0.8):
         """run genetic search on dataset given number of generations and population size
 
         Args:
@@ -60,7 +59,7 @@ class DEvol:
             pop_size (int): initial population size
             epochs (int): epochs to run each search, passed to keras model.fit -currently searches are
                             curtailed if no improvement is seen in 1 epoch
-            fitness (None, optional): scoring function to be applied to population scores, will be called on a numpy array
+            scoring_function (None, optional): scoring function to be applied to population scores, will be called on a numpy array
                                       which is a  min/max scaled version of evaluated model metrics, so
                                       It should accept a real number including 0. If left as default just the min/max
                                       scaled values will be used.
@@ -84,18 +83,21 @@ class DEvol:
             fit.append(v)
 
         fit = np.array(fit)
-        pop = Population(members, fit, fitness, obj=self.objective)
+        pop = Population(members, fit, scoring_function, obj=self.objective)
         print("Generation {3}:\t\tbest {4}: {0:0.4f}\t\taverage: {1:0.4f}\t\tstd: {2:0.4f}"\
                 .format(self.metric_objective(fit), np.mean(fit), np.std(fit), 1, self.metric))
 
         # Evolve over 
         for gen in range(1, num_generations):
+            best_genome, best_fit = pop.getBest()  # genome and fitness of the best individual of the previous population
             members = []
-            for i in range(int(pop_size * 0.95)):  # Crossover
+            for i in range(int((pop_size - 1)*frac_crossover)):  # Crossover
                 members.append(self.crossover(pop.select(), pop.select()))
-            members += pop.getBest(pop_size - int(pop_size * 0.95))
             for i in range(len(members)):  # Mutation
                 members[i] = self.mutate(members[i], gen)
+            new_random_individuals = [self.genome_handler.generate()
+                                      for _ in range(pop_size - int((pop_size - 1)*frac_crossover) - 1)]
+            members.extend(new_random_individuals)
             fit = []
             for i in range(len(members)):
                 print("\nmodel {0}/{1} - generation {2}/{3}:\n"
@@ -104,11 +106,14 @@ class DEvol:
                 v = res[metric_index]
                 del res
                 fit.append(v)
+            members.append(best_genome)
+            fit.append(best_fit)
 
             fit = np.array(fit)
-            pop = Population(members, fit, fitness, obj=self.objective)
+            pop = Population(members, fit, scoring_function, obj=self.objective)
             print("Generation {3}:\t\tbest {4}: {0:0.4f}\t\taverage: {1:0.4f}\t\tstd: {2:0.4f}"\
-                    .format(self.metric_objective(fit), np.mean(fit), np.std(fit), gen + 1, self.metric))
+                    .format(self.metric_objective(pop.fitnesses), np.mean(pop.fitnesses), np.std(pop.fitnesses),
+                            gen + 1, self.metric))
 
         return load_model('best-model.h5')
 
@@ -119,7 +124,7 @@ class DEvol:
             model.fit(self.x_train, self.y_train, validation_data=(self.x_test, self.y_test),
                       epochs=epochs,
                       verbose=1,
-                      callbacks=[EarlyStopping(monitor='val_loss', patience=1, verbose=1)])
+                      callbacks=[EarlyStopping(monitor='val_loss', patience=5, verbose=1)])
             loss, accuracy = model.evaluate(self.x_test, self.y_test, verbose=0)
         except:
             loss = 6.66
@@ -139,15 +144,12 @@ class DEvol:
         if self.bssf is -1 or self.metric_op(met, self.bssf) and accuracy is not 0:
             try:
                 os.remove('best-model.json')
-                os.remove('best-model_optimizer.txt')
                 os.remove('best-model.h5')
             except OSError:
                 pass
             self.bssf = met
             with open('best-model.json', 'w') as json_file:
                 json_file.write(model.to_json())
-            with open('best-model_optimizer.txt', 'w') as f:
-                f.write(model.optimizer.__class__.__name__)
             model.save('best-model.h5')
 
         return model, loss, accuracy
@@ -168,29 +170,30 @@ class Population:
     def __len__(self):
         return len(self.members)
 
-    def __init__(self, members, fitnesses, score, obj='max'):
+    def __init__(self, members, fitnesses, scoring_function, obj='max'):
         self.members = members
+        self.fitnesses = fitnesses
         scores = fitnesses - fitnesses.min()
         if scores.max() > 0:
             scores /= scores.max()
         if obj is 'min':
             scores = 1 - scores
-        if score:
-            self.scores = score(scores)
+        if scoring_function:
+            self.scores = scoring_function(scores)
         else:
             self.scores = scores
-        self.s_fit = sum(self.scores)
+        self.s_scores = sum(self.scores)
 
-    def getBest(self, n):
-        combined = [(self.members[i], self.scores[i])
+    def getBest(self):
+        combined = [(self.members[i], self.fitnesses[i])
                     for i in range(len(self.members))]
-        sorted(combined, key=(lambda x: x[1]), reverse=True)
-        return [x[0] for x in combined[:n]]
+        combined = sorted(combined, key=(lambda x: x[1]), reverse=True)
+        return combined[0]     # returns genome and fit of the best individual
 
     def select(self):
-        dart = rand.uniform(0, self.s_fit)
-        sum_fits = 0
+        dart = rand.uniform(0, self.s_scores)
+        sum_scores = 0
         for i in range(len(self.members)):
-            sum_fits += self.scores[i]
-            if sum_fits >= dart:
+            sum_scores += self.scores[i]
+            if sum_scores >= dart:
                 return self.members[i]
