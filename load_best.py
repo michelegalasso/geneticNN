@@ -2,13 +2,8 @@ import talib
 import numpy as np
 import pickle
 
+from keras.models import model_from_json
 from sklearn.preprocessing import StandardScaler
-from geneticNN import DEvol, GenomeHandler
-
-
-# **Prepare dataset**
-# This problem uses historical financial data for the company ABB India
-# which have been taken from the Quandl database and saved in a pickle file
 
 with open('ABB_India.pickle', 'rb') as file:
     dataset = pickle.load(file)
@@ -41,29 +36,16 @@ x_test = sc.transform(x_test)
 y_train = y_train.values
 y_test = y_test.values
 
-dataset = ((x_train, y_train), (x_test, y_test))
+with open('best-model.json', 'r') as json_file:
+    model = model_from_json(json_file.read())
 
-# **Prepare the genome configuration**
-# The `GenomeHandler` class handles the constraints that are imposed upon
-# models in a particular genetic program. See `genome-handler.py`
-# for more information.
+model.load_weights('best-model.h5')
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+y_pred = model.predict(x_test)
+y_pred = np.rint(y_pred.reshape(y_pred.shape[0])).astype(int)
 
-max_dense_layers = 4    # including final sigmoid layer
-max_dense_nodes = 1024
-input_shape = x_train.shape[1:]
-
-genome_handler = GenomeHandler(max_dense_layers, max_dense_nodes, input_shape)
-
-# **Create and run the genetic program**
-# The next, and final, step is create a `DEvol` and run it. Here we specify
-# a few settings pertaining to the genetic program. The program
-# will save each genome's encoding, as well as the model's loss and
-# accuracy, in a `.csv` file printed at the beginning of program.
-
-num_generations = 40
-population_size = 20
-num_epochs = 100
-
-devol = DEvol(genome_handler, 'genomes.csv')
-model = devol.run(dataset, num_generations, population_size, num_epochs)
-model.summary()
+counter = 0
+for prediction, value in zip(y_pred, y_test):
+    if prediction == value:
+        counter += 1
+print('Model accuracy: {}'.format(counter / len(y_pred)))

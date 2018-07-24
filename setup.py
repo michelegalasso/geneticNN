@@ -1,11 +1,11 @@
 from setuptools import setup, find_packages
 
-setup(name='devol',
+setup(name='geneticNN',
     version='0.01',
     description='Automated deep neural network design via genetic programming.',
-    url='https//github.com/joedav/devol',
-    author='Joe Davison',
-    author_email='josephddavison@gmail.com',
+    url='https://github.com/michelegalasso/geneticNN',
+    author='Michele Galasso',
+    author_email='michele.galasso@skoltech.ru',
     license='MIT',
 
     classifiers=[
@@ -29,7 +29,6 @@ setup(name='devol',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 2.7',
     ],
     keywords='genetic algorithm',
 
