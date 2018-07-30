@@ -1,58 +1,69 @@
-import talib
 import numpy as np
-import pickle
+import pandas as pd
+import talib
 
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 from geneticNN import DEvol, GenomeHandler
 
 
 # **Prepare dataset**
-# This problem uses historical financial data for the company ABB India
-# which have been taken from the Quandl database and saved in a pickle file
+# This problem uses historical financial data for the Reliance Industries Limited
+# which have been downloaded from the Quandl database and saved in a csv file
 
-with open('ABB_India.pickle', 'rb') as file:
-    dataset = pickle.load(file)
+# read dataset
+dataset = pd.read_csv('Reliance.csv')
 
-dataset = dataset.dropna()
-dataset = dataset[['Open', 'High', 'Low', 'Close']]
+# Drop data older than 2008-01-01
+mask = (dataset['Date'] > '2008-01-01')
+dataset = dataset.loc[mask]
 
-dataset['H-L'] = dataset['High'] - dataset['Low']
-dataset['O-C'] = dataset['Close'] - dataset['Open']
-dataset['3day MA'] = dataset['Close'].shift(1).rolling(window = 3).mean()
-dataset['10day MA'] = dataset['Close'].shift(1).rolling(window = 10).mean()
-dataset['30day MA'] = dataset['Close'].shift(1).rolling(window = 30).mean()
-dataset['Std_dev']= dataset['Close'].rolling(5).std()
+dataset['10day SMA'] = dataset['Close'].shift(1).rolling(window = 10).mean()
+dataset['10day WMA'] = talib.WMA(dataset['Close'].values, timeperiod=10)
+dataset['Momentum'] = talib.MOM(dataset['Close'].values, timeperiod=9)
+dataset['Stochastic %K'], dataset['Stochastic %D'] = talib.STOCH(dataset['High'].values, dataset['Low'].values,
+                                                                 dataset['Close'].values)
 dataset['RSI'] = talib.RSI(dataset['Close'].values, timeperiod = 9)
+dataset['MACD'] = talib.MACD(dataset['Close'].values)[0]
 dataset['Williams %R'] = talib.WILLR(dataset['High'].values, dataset['Low'].values, dataset['Close'].values, 7)
-dataset['Price_Rise'] = np.where(dataset['Close'].shift(-1) > dataset['Close'], 1, 0)
-
+dataset['A/D Oscillator'] = talib.ADOSC(dataset['High'].values, dataset['Low'].values, dataset['Close'].values,
+                                        dataset['Total Trade Quantity'].values)
+dataset['CCI'] = talib.CCI(dataset['High'].values, dataset['Low'].values, dataset['Close'].values)
+dataset['Price Rise'] = np.where(dataset['Close'].shift(-1) > dataset['Close'], 1, 0)
 dataset = dataset.dropna()
 
-x = dataset.iloc[:, 4:-1]
-y = dataset.iloc[:, -1]
+# define input
+x = dataset[['10day SMA', '10day WMA', 'Momentum', 'Stochastic %K', 'Stochastic %D', 'RSI', 'MACD', 'Williams %R',
+             'A/D Oscillator', 'CCI']].values
+y = dataset['Price Rise'].values
 
+# split into train and test sets
 split = int(len(dataset)*0.8)
 x_train, x_test, y_train, y_test = x[:split], x[split:], y[:split], y[split:]
 
-sc = StandardScaler()
-x_train = sc.fit_transform(x_train)
-x_test = sc.transform(x_test)
-
-y_train = y_train.values
-y_test = y_test.values
-
-dataset = ((x_train, y_train), (x_test, y_test))
+# normalize features
+scaler = MinMaxScaler(feature_range=(-1, 1))
+x_train = scaler.fit_transform(x_train)
+x_test = scaler.transform(x_test)
 
 # **Prepare the genome configuration**
 # The `GenomeHandler` class handles the constraints that are imposed upon
 # models in a particular genetic program. See `genome-handler.py`
 # for more information.
 
+max_recurr_layers = 3
 max_dense_layers = 4    # including final sigmoid layer
+max_recurr_nodes = 512
 max_dense_nodes = 1024
+
+# reshape input to be 3D [samples, timesteps, features]
+if max_recurr_layers != 0:
+    x_train = x_train.reshape((x_train.shape[0], 1, x_train.shape[1]))
+    x_test = x_test.reshape((x_test.shape[0], 1, x_test.shape[1]))
+
+dataset = ((x_train, y_train), (x_test, y_test))
 input_shape = x_train.shape[1:]
 
-genome_handler = GenomeHandler(max_dense_layers, max_dense_nodes, input_shape)
+genome_handler = GenomeHandler(max_recurr_layers, max_dense_layers, max_recurr_nodes, max_dense_nodes, input_shape)
 
 # **Create and run the genetic program**
 # The next, and final, step is create a `DEvol` and run it. Here we specify
@@ -61,9 +72,9 @@ genome_handler = GenomeHandler(max_dense_layers, max_dense_nodes, input_shape)
 # accuracy, in a `.csv` file printed at the beginning of program.
 
 num_generations = 40
-population_size = 20
-num_epochs = 100
+population_size = 40
+num_epochs = 10000
 
 devol = DEvol(genome_handler, 'genomes.csv')
-model = devol.run(dataset, num_generations, population_size, num_epochs)
+model = devol.run(dataset, num_generations, population_size, num_epochs, metric='accuracy')
 model.summary()

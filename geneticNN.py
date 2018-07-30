@@ -1,8 +1,5 @@
 from genome_handler import GenomeHandler
 import numpy as np
-from keras.models import Sequential
-from keras.utils import np_utils
-from keras.datasets import mnist, cifar10
 from keras.callbacks import EarlyStopping
 from keras.models import load_model
 import keras.backend as K
@@ -10,7 +7,6 @@ import tensorflow as tf
 from datetime import datetime
 import random as rand
 import csv
-import sys
 import operator
 import gc
 import os
@@ -123,12 +119,13 @@ class DEvol:
         try:
             model.fit(self.x_train, self.y_train, validation_data=(self.x_test, self.y_test),
                       epochs=epochs,
+                      batch_size=1,
                       verbose=1,
-                      callbacks=[EarlyStopping(monitor='val_loss', patience=5, verbose=1)])
+                      callbacks=[EarlyStopping(monitor='val_acc', patience=10, verbose=1)])
             loss, accuracy = model.evaluate(self.x_test, self.y_test, verbose=0)
         except:
             loss = 6.66
-            accuracy = 1 / self.genome_handler.n_classes
+            accuracy = 0.5
             gc.collect()
             K.clear_session()
             tf.reset_default_graph()
