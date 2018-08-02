@@ -3,3 +3,4 @@ __pycache__
 *.pyc
 geneticNN.egg-info
 .idea
+old_functions
