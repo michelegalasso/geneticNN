@@ -18,7 +18,7 @@ class GenomeHandler:
         ]
         self.layer_params = {
             "active": [0, 1],
-            "num nodes": [2 ** i for i in range(3, int(math.log(max_nodes, 2)) + 1)],
+            "num nodes": [i for i in range(10, max_nodes + 1, 10)],
         }
 
         self.layers = max_layers

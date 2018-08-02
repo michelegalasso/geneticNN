@@ -272,6 +272,7 @@ class CustomLSTM(object):
         return np.mean(mse_test_loss_seq)
 
     def show_results(self, df, all_mid_data):
+        plt.figure(figsize=(13.60, 7.65))
         plt.plot(range(df.shape[0]), all_mid_data, color='b')
         for xval, yval in zip(self.x_axis_seq, self.prediction):
             plt.plot(xval, yval, color='r')
@@ -279,5 +280,5 @@ class CustomLSTM(object):
         plt.title('Best Test Predictions Over Time', fontsize=18)
         plt.xlabel('Date', fontsize=18)
         plt.ylabel('Mid Price', fontsize=18)
-        plt.xlim(11000, 12500)
-        plt.show()
+        plt.xlim(11000, 12075)
+        plt.savefig('best_model_prediction.png')

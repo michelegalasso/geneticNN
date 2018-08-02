@@ -1,6 +1,7 @@
 from geneticNN import Genetic
 from GenomeHandler import GenomeHandler
 
+import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
@@ -58,7 +59,7 @@ for ti in range(11000):
 # models in a particular genetic program. See `genome-handler.py`
 # for more information.
 
-max_layers = 3
+max_layers = 4
 max_nodes = 256     # maximum number of nodes in each layer
 
 genome_handler = GenomeHandler(max_layers, max_nodes)
@@ -69,12 +70,12 @@ genome_handler = GenomeHandler(max_layers, max_nodes)
 # will save each genome's encoding, as well as the model's loss and
 # accuracy, in a `.csv` file printed at the beginning of program.
 
-num_generations = 4
-population_size = 10
-num_epochs = 5
+num_generations = 40
+population_size = 20
+num_epochs = 10
 
 genetic = Genetic(genome_handler, 'genomes.csv')
 best_model = genetic.run(train_data, test_data, num_generations, population_size, num_epochs)
 
 # print the prediction of the best model
-best_model.show_results(df, np.concatenate([train_data,test_data],axis=0))
+best_model.show_results(df, np.concatenate([train_data,test_data], axis=0))
