@@ -23,7 +23,7 @@ class Population(object):
     def getBest(self):
         combined = [(self.members[i], self.fitnesses[i])
                     for i in range(len(self.members))]
-        combined = sorted(combined, key=(lambda x: x[1]), reverse=True)
+        combined = sorted(combined, key=(lambda x: x[1]), reverse=False)
         return combined[0]     # returns genome and fit of the best individual
 
     def select(self):

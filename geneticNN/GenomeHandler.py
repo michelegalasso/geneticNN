@@ -15,11 +15,11 @@ class GenomeHandler(object):
     def __init__(self, max_layers, max_nodes):
         self.layer_shape = [
             "active",
-            "num nodes",
+            "nodes",
         ]
         self.layer_params = {
             "active": [0, 1],
-            "num nodes": [i for i in range(10, max_nodes + 1, 10)],
+            "nodes": [i for i in range(10, max_nodes + 1, 10)],
         }
 
         self.layers = max_layers
@@ -64,7 +64,7 @@ class GenomeHandler(object):
         encoding = ["ID"]
         for i in range(self.layers):
             for key in self.layer_shape:
-                encoding.append("Layer" + str(i) + " " + key)
+                encoding.append("Layer" + str(i + 1) + " " + key)
         return encoding
 
     def generate(self, ID):

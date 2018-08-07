@@ -1,30 +1,33 @@
 import numpy as np
 import random as rand
-import csv
 import operator
 import os
 
-from datetime import datetime
 from geneticNN.Population import Population
 
 
 class GeneticAlgo(object):
 
-    def __init__(self, genome_handler, data_path=""):
+    def __init__(self, genome_handler):
         self.genome_handler = genome_handler
-        self.datafile = data_path or (datetime.now().ctime() + '.csv')
         self.bssf = -1
         self.best_model = None
         self.ID = 0
+        self.keys = genome_handler.genome_representation() + ['Val Loss']
+        self.lengths = [len(word) + 4 for word in self.keys]
 
-        if os.path.isfile(data_path) and os.stat(data_path).st_size > 1:
-            raise ValueError('Non-empty file %s already exists. Please change file path to prevent overwritten genome data.' % data_path)
+        # check for previous results
+        if os.path.isfile('Individuals.txt') or os.path.isfile('BestIndividuals.txt'):
+            raise ValueError('Previous results found. Please remove them or move them in a different path.')
 
-        print("Genome encoding and accuracy data stored at", self.datafile, "\n")
-        with open(self.datafile, 'a') as csvfile:
-            writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            genome = genome_handler.genome_representation() + ["Val Loss"]
-            writer.writerow(genome)
+        # write output
+        with open('Individuals.txt', 'a') as file:
+            file.write(''.join(item.ljust(length) for item, length in zip(self.keys, self.lengths)))
+            file.write('\n')
+
+        with open('BestIndividuals.txt', 'a') as file:
+            file.write(''.join(item.ljust(length) for item, length in zip(self.keys, self.lengths)))
+            file.write('\n')
 
     def set_objective(self):
         self.metric = 'loss'
@@ -76,6 +79,14 @@ class GeneticAlgo(object):
         # Evolve over 
         for gen in range(1, num_generations):
             best_genome, best_fit = pop.getBest()  # genome and fitness of the best individual of the previous population
+
+            # write output
+            values = best_genome + [best_fit]
+            with open('BestIndividuals.txt', 'a') as file:
+                file.write('Generation {}\n'.format(gen))
+                file.write(''.join(str(value).ljust(length) for value, length in zip(values, self.lengths)))
+                file.write('\n')
+
             members = []
             for i in range(int((pop_size - 1)*frac_crossover)):  # Crossover
                 members.append(self.crossover(pop.select(), pop.select()))
@@ -102,18 +113,25 @@ class GeneticAlgo(object):
                     .format(self.metric_objective(pop.fitnesses), np.mean(pop.fitnesses), np.std(pop.fitnesses),
                             gen + 1, self.metric))
 
+        # write output for the last generation
+        best_genome, best_fit = pop.getBest()
+        values = best_genome + [best_fit]
+        with open('BestIndividuals.txt', 'a') as file:
+            file.write('Generation {}\n'.format(num_generations))
+            file.write(''.join(str(value).ljust(length) for value, length in zip(values, self.lengths)))
+            file.write('\n')
+
         return self.best_model
 
     def evaluate(self, genome, epochs):
         model = self.genome_handler.decode(genome)
         loss = model.train(self.train_data, self.test_data, epochs=epochs)
+        values = genome + [loss]
 
-        # Record the stats
-        with open(self.datafile, 'a') as csvfile:
-            writer = csv.writer(csvfile, delimiter=',',
-                                quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            row = list(genome) + [loss]
-            writer.writerow(row)
+        # write output
+        with open('Individuals.txt', 'a') as file:
+            file.write(''.join(str(value).ljust(length) for value, length in zip(values, self.lengths)))
+            file.write('\n')
 
         met = loss
         if self.bssf is -1 or self.metric_op(met, self.bssf):

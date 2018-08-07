@@ -74,7 +74,7 @@ num_generations = 2
 population_size = 4
 num_epochs = 5
 
-genetic = GeneticAlgo(genome_handler, 'genomes.csv')
+genetic = GeneticAlgo(genome_handler)
 best_model = genetic.run(train_data, test_data, num_generations, population_size, num_epochs)
 
 # print the prediction of the best model
