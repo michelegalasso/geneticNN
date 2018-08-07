@@ -36,15 +36,13 @@ class GeneticAlgo(object):
         self.metric_objective = min
 
 
-    def run(self, train_data, test_data, num_generations, pop_size, epochs, scoring_function=None, frac_crossover=0.8):
+    def run(self, train_data, test_data, num_generations, pop_size, scoring_function=None, frac_crossover=0.8):
         """run genetic search on dataset given number of generations and population size
 
         Args:
             dataset : tuple or list of numpy arrays in form ((train_data, train_labels), (validation_data, validation_labels))
             num_generations (int): number of generations to search
             pop_size (int): initial population size
-            epochs (int): epochs to run each search, passed to keras model.fit -currently searches are
-                            curtailed if no improvement is seen in 1 epoch
             scoring_function (None, optional): scoring function to be applied to population scores, will be called on a numpy array
                                       which is a  min/max scaled version of evaluated model metrics, so
                                       It should accept a real number including 0. If left as default just the min/max
@@ -68,7 +66,7 @@ class GeneticAlgo(object):
         for i in range(len(members)):
             print("\nmodel {0}/{1} - generation {2}/{3}:\n"\
                     .format(i + 1, len(members), 1, num_generations))
-            res = self.evaluate(members[i], epochs)
+            res = self.evaluate(members[i])
             fit.append(res)
 
         fit = np.array(fit)
@@ -102,7 +100,7 @@ class GeneticAlgo(object):
             for i in range(len(members)):
                 print("\nmodel {0}/{1} - generation {2}/{3}:\n"
                         .format(i + 1, len(members), gen + 1, num_generations))
-                res = self.evaluate(members[i], epochs)
+                res = self.evaluate(members[i])
                 fit.append(res)
             members.append(best_genome)
             fit.append(best_fit)
@@ -123,8 +121,8 @@ class GeneticAlgo(object):
 
         return self.best_model
 
-    def evaluate(self, genome, epochs):
-        model = self.genome_handler.decode(genome)
+    def evaluate(self, genome):
+        model, epochs = self.genome_handler.decode(genome)
         loss = model.train(self.train_data, self.test_data, epochs=epochs)
         values = genome + [loss]
 

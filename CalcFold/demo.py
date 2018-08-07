@@ -59,10 +59,11 @@ for ti in range(11000):
 # models in a particular genetic program. See `genome-handler.py`
 # for more information.
 
-max_layers = 3
-max_nodes = 64     # maximum number of nodes in each layer
+max_layers = 4
+max_nodes = 256     # maximum number of nodes in each layer
+epochs_range = [5, 15]
 
-genome_handler = GenomeHandler(max_layers, max_nodes)
+genome_handler = GenomeHandler(max_layers, max_nodes, epochs_range)
 
 # **Create and run the genetic program**
 # The next, and final, step is create a `DEvol` and run it. Here we specify
@@ -70,12 +71,11 @@ genome_handler = GenomeHandler(max_layers, max_nodes)
 # will save each genome's encoding, as well as the model's loss and
 # accuracy, in a `.csv` file printed at the beginning of program.
 
-num_generations = 2
-population_size = 4
-num_epochs = 5
+num_generations = 40
+population_size = 20
 
 genetic = GeneticAlgo(genome_handler)
-best_model = genetic.run(train_data, test_data, num_generations, population_size, num_epochs)
+best_model = genetic.run(train_data, test_data, num_generations, population_size)
 
 # print the prediction of the best model
 best_model.show_results(df, np.concatenate([train_data,test_data], axis=0))
