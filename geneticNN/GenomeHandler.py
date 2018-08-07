@@ -1,7 +1,7 @@
 import numpy as np
 import random as rand
-import math
-from CustomLSTM import CustomLSTM
+
+from geneticNN.CustomLSTM import CustomLSTM
 
 ##################################
 # Genomes are represented as fixed-with lists of integers corresponding to
@@ -10,7 +10,8 @@ from CustomLSTM import CustomLSTM
 # [<ID><layer 1><layer 2><layer 3>]
 ###################################
 
-class GenomeHandler:
+
+class GenomeHandler(object):
     def __init__(self, max_layers, max_nodes):
         self.layer_shape = [
             "active",

@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class DataGeneratorSeq(object):
     '''
     Generates batches of input and output data for training the neural network

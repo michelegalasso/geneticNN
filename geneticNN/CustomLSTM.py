@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-from DataGeneratorSeq import DataGeneratorSeq
+from geneticNN.DataGeneratorSeq import DataGeneratorSeq
 
 
 class CustomLSTM(object):
