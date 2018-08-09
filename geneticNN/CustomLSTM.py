@@ -1,7 +1,10 @@
+# force matplotlib to not use any Xwindows backend
+import matplotlib
+matplotlib.use('Agg')
+
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
-
 from geneticNN.DataGeneratorSeq import DataGeneratorSeq
 
 
