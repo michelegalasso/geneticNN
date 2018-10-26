@@ -24,4 +24,4 @@ The most significant barrier in using geneticNN on a real problem is the complex
 
 ## Wanna Try It?
 
-To setup, just clone the repo and run `pip install -e path/to/repo`. You should then be able to access `` globally.
+To setup, just clone the repo and run `pip install -e path/to/repo`. You should then be able to access 'geneticNN' globally.
